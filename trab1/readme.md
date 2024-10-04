@@ -14,7 +14,9 @@ Caso voce nao possua um leitor de UTF-32, como eh o meu caso, sugiro rodar esse 
 file_path = 'saida.bin'
 with open(file_path, 'rb') as f:
     binary_content = f.read()
+    
 decoded_content = binary_content.decode('utf-32')
+
 print(decoded_content)
 
 # Fim do Script
