@@ -12,16 +12,13 @@ Caso voce nao possua um leitor de UTF-32, como eh o meu caso, sugiro rodar esse 
 # Codigo Python
 
 file_path = 'saida.bin'
-
 with open(file_path, 'rb') as f:
-
     binary_content = f.read()
-
 decoded_content = binary_content.decode('utf-32')
-
 print(decoded_content)
 
 # Fim do Script
+
 Nenhum editor de texto que eu tenho instalado no meu computador tem suporte para UTF-32, se tem, nao sei usar. 
 
 Ao rodar esse codigo, no terminal, ao menos no Windows 11, eh possivel ver o conteudo do UTF-32. Assim, pode-se confirmar o sucesso da funcao.
