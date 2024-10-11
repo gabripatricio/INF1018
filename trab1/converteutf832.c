@@ -120,7 +120,89 @@ int convUtf8p32(FILE* arquivo_entrada, FILE* arquivo_saida)
 	return 0; //sucesso
 }
 
-int convUtf32p8(FILE* input, FILE* output) {
-    // Implementação futura
-    return -1;
+
+int convUtf32p8(FILE* arquivo_entrada, FILE* arquivo_saida) {
+    unsigned char bom[4];
+    
+    // Leitura dos	 primeiros 4 bytes (BOM)
+    if (fread(bom, 1, 4, arquivo_entrada) != 4) {
+        fprintf(stderr, "Erro ao ler o BOM.\n");
+        return -1;
+    }
+
+    // Verificar se é BOM válido (Little-endian ou Big-endian)
+    if (bom[0] == 0xFF && bom[1] == 0xFE && bom[2] == 0x00 && bom[3] == 0x00) {
+        // Little-endian BOM detectado
+        printf("BOM Little-endian detectado.\n");
+    } else if (bom[0] == 0x00 && bom[1] == 0x00 && bom[2] == 0xFE && bom[3] == 0xFF) {
+        // Big-endian BOM detectado
+        fprintf(stderr, "Erro: Arquivo UTF-32 Big-endian não suportado.\n");
+        return -1;
+    } else {
+        // BOM inválido ou ausente
+        fprintf(stderr, "BOM inválido ou ausente.\n");
+        return -1;
+    }
+
+    unsigned int utf32_char;
+
+    // Loop para ler os caracteres UTF-32 e convertê-los para UTF-8
+    while (fread(&utf32_char, sizeof(unsigned int), 1, arquivo_entrada) == 1) {
+        // Verificar se o valor UTF-32 está dentro da faixa válida
+        if (utf32_char > 0x10FFFF) {
+            fprintf(stderr, "Caractere UTF-32 fora da faixa permitida: U+%X\n", utf32_char);
+            return -1;
+        }
+
+        // Converte o caractere UTF-32 para UTF-8
+        if (utf32_char <= 0x7F) {
+            // 1 byte: 0xxxxxxx
+            unsigned char utf8_char = utf32_char & 0x7F;
+            if (fwrite(&utf8_char, sizeof(unsigned char), 1, arquivo_saida) != 1) {
+                fprintf(stderr, "Erro ao escrever no arquivo de saída.\n");
+                return -1;
+            }
+        } else if (utf32_char <= 0x7FF) {
+            // 2 bytes: 110xxxxx 10xxxxxx
+            unsigned char utf8_char[2];
+            utf8_char[0] = 0xC0 | ((utf32_char >> 6) & 0x1F); // 110xxxxx
+            utf8_char[1] = 0x80 | (utf32_char & 0x3F);         // 10xxxxxx
+            if (fwrite(utf8_char, sizeof(unsigned char), 2, arquivo_saida) != 2) {
+                fprintf(stderr, "Erro ao escrever no arquivo de saída.\n");
+                return -1;
+            }
+        } else if (utf32_char <= 0xFFFF) {
+            // 3 bytes: 1110xxxx 10xxxxxx 10xxxxxx
+            unsigned char utf8_char[3];
+            utf8_char[0] = 0xE0 | ((utf32_char >> 12) & 0x0F); // 1110xxxx
+            utf8_char[1] = 0x80 | ((utf32_char >> 6) & 0x3F);  // 10xxxxxx
+            utf8_char[2] = 0x80 | (utf32_char & 0x3F);          // 10xxxxxx
+            if (fwrite(utf8_char, sizeof(unsigned char), 3, arquivo_saida) != 3) {
+                fprintf(stderr, "Erro ao escrever no arquivo de saída.\n");
+                return -1;
+            }
+        } else if (utf32_char <= 0x10FFFF) {
+            // 4 bytes: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+            unsigned char utf8_char[4];
+            utf8_char[0] = 0xF0 | ((utf32_char >> 18) & 0x07); // 11110xxx
+            utf8_char[1] = 0x80 | ((utf32_char >> 12) & 0x3F); // 10xxxxxx
+            utf8_char[2] = 0x80 | ((utf32_char >> 6) & 0x3F);  // 10xxxxxx
+            utf8_char[3] = 0x80 | (utf32_char & 0x3F);          // 10xxxxxx
+            if (fwrite(utf8_char, sizeof(unsigned char), 4, arquivo_saida) != 4) {
+                fprintf(stderr, "Erro ao escrever no arquivo de saída.\n");
+                return -1;
+            }
+        } else {
+            fprintf(stderr, "Caractere inválido no arquivo UTF-32.\n");
+            return -1;
+        }
+    }
+
+    // Verificar se houve erro na leitura
+    if (ferror(arquivo_entrada)) {
+        fprintf(stderr, "Erro de leitura do arquivo UTF-32.\n");
+        return -1;
+    }
+
+    return 0; // Sucesso
 }

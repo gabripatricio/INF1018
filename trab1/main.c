@@ -5,7 +5,7 @@
 int total_passed = 0;  // Contador de casos que passaram
 
 void test_convUtf8p32() {
-    FILE *input = fopen("test_utf8.txt", "rb");
+    FILE *input = fopen("teste_escrito.txt", "rb");
     FILE *output = fopen("output_utf32_le.bin", "wb");
     
     if (input == NULL || output == NULL) {
@@ -27,7 +27,7 @@ void test_convUtf8p32() {
 }
 
 void test_convUtf32p8() {
-    FILE *input = fopen("test_utf32_le.bin", "rb");
+    FILE *input = fopen("output_utf32_le.bin", "rb");
     FILE *output = fopen("output_utf8.txt", "wb");
 
     if (input == NULL || output == NULL) {
