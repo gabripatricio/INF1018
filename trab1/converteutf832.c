@@ -241,7 +241,7 @@ int convUtf32p8(FILE* input, FILE* output)
 			fwrite(&b1, sizeof(unsigned char), 1, output);
 			fwrite(&b2, sizeof(unsigned char), 1, output);
 
-			printf("Escrevendo 2 bytes: %02x %02x\n", b1, b2); //mensagem de debug
+			printf("Escrevendo 2 bytes: %02x %02x\n", b1, b2); //mensagem de debug 
 			break;
 
 		case TRES_BYTES:
