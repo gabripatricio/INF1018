@@ -1,29 +1,79 @@
 #include <stdio.h>
 #include <stdlib.h>
-
-// algumas informacoes importantes que nos vamos precisar:
+#include "converte832.h"
 
 /*
 
-Código UNICODE Representação UTF-8 (byte a byte)
-U+0000 a U+007F (0 a 127) 0xxxxxxx
-U+0080 a U+07FF (128 a 2047) 110xxxxx 10xxxxxx
-U+0800 a U+FFFF (2048 a 65535) 1110xxxx 10xxxxxx 10xxxxxx
-U+10000 a U+10FFFF (65536 a 1114111) 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+Alunos:
 
-
-O símbolo © tem código UNICODE U+00A9.
-Em binário A9 é 1010 1001. Usando a codificação de 2 bytes para a faixa U+0080 a U+07FF temos:
-11000010 10101001 = 0xC2 0xA9
-
-O primeiro byte começa com 110, indicando que a sequência é composta por dois bytes. A seguir vêm os cinco primeiros bits do código UNICODE (note o preenchimento com zeros à esquerda para completar a porção do código do caractere colocada no primeiro byte da sequência).
-O segundo byte começa com 10, indicando que é um byte de continuação. A seguir vêm os próximos seis bits do código UNICODE.
+Gabriel Patricio de Oliveira: 2310806
+Joao Vitor Mallet Malheiros: 2310604
 
 */
 
+#define TRUE 1
+#define FALSE 0
+
+enum qtdBytes {
+	ERRO = -1,
+	UM_BYTE = 1,
+	DOIS_BYTES = 2,
+	TRES_BYTES = 3,
+	QUATRO_BYTES = 4,
+};
+
+
+int classificaCasoUTF8(unsigned char byte)
+{
+	if (byte < 0x0080)
+	{
+		return 1;
+	}
+	else if ((byte >> 5) == 0b110)
+	{
+		return 2;
+	}
+	else if ((byte >> 4) == 0b1110)
+	{
+		return 3;
+	}
+	else if ((byte >> 3) == 0b11110)
+	{
+		return 4;
+	}
+	else
+	{
+		return -1;
+	}
+}
+
+int classificaCasoUTF32(unsigned int numero)
+{
+	if (numero <= 0x007F)
+	{
+		return 1;
+	}
+	else if (numero <= 0x07FF)
+	{
+		return 2;
+	}
+	else if (numero <= 0xFFFF)
+	{
+		return 3;
+	}
+	else if (numero <= 0x10FFFF)
+	{
+		return 4;
+	}
+	else
+	{
+		return -1;
+	}
+}
+
 int convUtf8p32(FILE* arquivo_entrada, FILE* arquivo_saida)
 {
-	unsigned char byte1, byte2, byte3, byte4;
+	unsigned char byte1 = 0, byte2 = 0, byte3 = 0, byte4 = 0;
 
 	if (arquivo_entrada == NULL || arquivo_saida == NULL)
 	{
@@ -34,20 +84,21 @@ int convUtf8p32(FILE* arquivo_entrada, FILE* arquivo_saida)
 	unsigned int bom = 0x0000FEFF; // considerando arquiterura little endian
 	fwrite(&bom, sizeof(unsigned int), 1, arquivo_saida);
 
-
 	while (fread(&byte1, sizeof(unsigned char), 1, arquivo_entrada) == 1)
 	{
 		unsigned int utf32 = 0; //esse que vamos escrever
 
-		if (byte1 < 0x0080) // caso 1 (ASCII)
+		int caso = classificaCasoUTF8(byte1);
+
+		switch (caso)
 		{
+		case UM_BYTE:
+			// (ASCII)
 			utf32 |= byte1;
-			// ok, funciona
-		}
+			break;
 
-		else if ((byte1 >> 5) == 0b110) // caso 2 (tem que ser 5 pois estamos considerando 110xxxxx como primeiro byte)
-		{
-
+		case DOIS_BYTES:
+			// caso 2 (tem que ser 5 pois estamos considerando 110xxxxx como primeiro byte)
 			if (fread(&byte2, sizeof(unsigned char), 1, arquivo_entrada) != 1)
 			{
 				printf("Erro na leitura do arquivo.\n");
@@ -56,11 +107,9 @@ int convUtf8p32(FILE* arquivo_entrada, FILE* arquivo_saida)
 
 			utf32 |= (byte1 & 0x1F) << 6;  // 0x1F = 0b00011111 --> Os 5 bits uteis do byte1
 			utf32 |= (byte2 & 0x3F);      // 0x3F = 0b00111111 Os 6 bits uteis do byte2
+			break;
 
-		}
-
-		else if ((byte1 >> 4) == 0b1110) //caso 3
-		{
+		case TRES_BYTES:
 			// aqui tem que dar 2 freads
 			if (fread(&byte2, sizeof(unsigned char), 1, arquivo_entrada) != 1)
 			{
@@ -77,26 +126,25 @@ int convUtf8p32(FILE* arquivo_entrada, FILE* arquivo_saida)
 			utf32 |= (byte1 & 0x0F) << 12; // 0b00011111
 			utf32 |= (byte2 & 0x3F) << 6;
 			utf32 |= (byte3 & 0x3F);
-		}
+			break;
 
-		else if (byte1 >> 3 == 0b11110) // caso 4
-		{
+		case QUATRO_BYTES:
 			// aqui tem que dar 3 freads
 			if (fread(&byte2, sizeof(unsigned char), 1, arquivo_entrada) != 1)
 			{
-				printf("Erro na leitura do arquivo.87\n");
+				printf("Erro na leitura do arquivo.c4\n");
 				return -1;
 			}
 
 			if (fread(&byte3, sizeof(unsigned char), 1, arquivo_entrada) != 1)
 			{
-				printf("Erro na leitura do arquivo.93\n");
+				printf("Erro na leitura do arquivo.c4\n");
 				return -1;
 			}
 
 			if (fread(&byte4, sizeof(unsigned char), 1, arquivo_entrada) != 1)
 			{
-				printf("Erro na leitura do arquivo.99\n");
+				printf("Erro na leitura do arquivo.c4\n");
 				return -1;
 			}
 			//fazendo as operacoes de mascara
@@ -104,105 +152,126 @@ int convUtf8p32(FILE* arquivo_entrada, FILE* arquivo_saida)
 			utf32 |= (byte2 & 0x3F) << 12; // 6 bits de byte2
 			utf32 |= (byte3 & 0x3F) << 6;  // 6 bits de byte3
 			utf32 |= (byte4 & 0x3F);       // 6 bits de byte4
-		}
+			break;
 
-		else
-		{
+		case ERRO:
 			printf("Arquvio mal formatado.\n");
 			return -1;
+			break;
 		}
-
 		// escrever no final
 		fwrite(&utf32, sizeof(unsigned int), 1, arquivo_saida);
-		printf("%d\n", byte1);
-	}
 
+		//apenas exibindo o bytes para ver o que esta acontencendo... (mini dump)
+		unsigned char* utf32Bytes = (unsigned char*)&utf32;
+		printf("Bytes: %02X %02X %02X %02X\n", utf32Bytes[0], utf32Bytes[1], utf32Bytes[2], utf32Bytes[3]);
+	}
 	return 0; //sucesso
 }
 
+unsigned int trocaOrdem(unsigned int num)
+{
+	unsigned int byte1, byte2, byte3, byte4;
 
-int convUtf32p8(FILE* arquivo_entrada, FILE* arquivo_saida) {
-    unsigned char bom[4];
-    
-    // Leitura dos	 primeiros 4 bytes (BOM)
-    if (fread(bom, 1, 4, arquivo_entrada) != 4) {
-        fprintf(stderr, "Erro ao ler o BOM.\n");
-        return -1;
-    }
+	byte1 = 0x000000FF;
+	byte2 = 0x0000FF00;
+	byte3 = 0x00FF0000;
+	byte4 = 0xFF000000;
 
-    // Verificar se é BOM válido (Little-endian ou Big-endian)
-    if (bom[0] == 0xFF && bom[1] == 0xFE && bom[2] == 0x00 && bom[3] == 0x00) {
-        // Little-endian BOM detectado
-        printf("BOM Little-endian detectado.\n");
-    } else if (bom[0] == 0x00 && bom[1] == 0x00 && bom[2] == 0xFE && bom[3] == 0xFF) {
-        // Big-endian BOM detectado
-        fprintf(stderr, "Erro: Arquivo UTF-32 Big-endian não suportado.\n");
-        return -1;
-    } else {
-        // BOM inválido ou ausente
-        fprintf(stderr, "BOM inválido ou ausente.\n");
-        return -1;
-    }
+	byte1 = byte1 & num;
+	byte2 = byte2 & num;
+	byte3 = byte3 & num;
+	byte4 = byte4 & num;
 
-    unsigned int utf32_char;
+	unsigned int resp = 0;
 
-    // Loop para ler os caracteres UTF-32 e convertê-los para UTF-8
-    while (fread(&utf32_char, sizeof(unsigned int), 1, arquivo_entrada) == 1) {
-        // Verificar se o valor UTF-32 está dentro da faixa válida
-        if (utf32_char > 0x10FFFF) {
-            fprintf(stderr, "Caractere UTF-32 fora da faixa permitida: U+%X\n", utf32_char);
-            return -1;
-        }
+	resp |= (byte1 << 24);
+	resp |= (byte2 << 8);
+	resp |= (byte3 >> 8);
+	resp |= (byte4 >> 24);
 
-        // Converte o caractere UTF-32 para UTF-8
-        if (utf32_char <= 0x7F) {
-            // 1 byte: 0xxxxxxx
-            unsigned char utf8_char = utf32_char & 0x7F;
-            if (fwrite(&utf8_char, sizeof(unsigned char), 1, arquivo_saida) != 1) {
-                fprintf(stderr, "Erro ao escrever no arquivo de saída.\n");
-                return -1;
-            }
-        } else if (utf32_char <= 0x7FF) {
-            // 2 bytes: 110xxxxx 10xxxxxx
-            unsigned char utf8_char[2];
-            utf8_char[0] = 0xC0 | ((utf32_char >> 6) & 0x1F); // 110xxxxx
-            utf8_char[1] = 0x80 | (utf32_char & 0x3F);         // 10xxxxxx
-            if (fwrite(utf8_char, sizeof(unsigned char), 2, arquivo_saida) != 2) {
-                fprintf(stderr, "Erro ao escrever no arquivo de saída.\n");
-                return -1;
-            }
-        } else if (utf32_char <= 0xFFFF) {
-            // 3 bytes: 1110xxxx 10xxxxxx 10xxxxxx
-            unsigned char utf8_char[3];
-            utf8_char[0] = 0xE0 | ((utf32_char >> 12) & 0x0F); // 1110xxxx
-            utf8_char[1] = 0x80 | ((utf32_char >> 6) & 0x3F);  // 10xxxxxx
-            utf8_char[2] = 0x80 | (utf32_char & 0x3F);          // 10xxxxxx
-            if (fwrite(utf8_char, sizeof(unsigned char), 3, arquivo_saida) != 3) {
-                fprintf(stderr, "Erro ao escrever no arquivo de saída.\n");
-                return -1;
-            }
-        } else if (utf32_char <= 0x10FFFF) {
-            // 4 bytes: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
-            unsigned char utf8_char[4];
-            utf8_char[0] = 0xF0 | ((utf32_char >> 18) & 0x07); // 11110xxx
-            utf8_char[1] = 0x80 | ((utf32_char >> 12) & 0x3F); // 10xxxxxx
-            utf8_char[2] = 0x80 | ((utf32_char >> 6) & 0x3F);  // 10xxxxxx
-            utf8_char[3] = 0x80 | (utf32_char & 0x3F);          // 10xxxxxx
-            if (fwrite(utf8_char, sizeof(unsigned char), 4, arquivo_saida) != 4) {
-                fprintf(stderr, "Erro ao escrever no arquivo de saída.\n");
-                return -1;
-            }
-        } else {
-            fprintf(stderr, "Caractere inválido no arquivo UTF-32.\n");
-            return -1;
-        }
-    }
+	return resp;
+}
 
-    // Verificar se houve erro na leitura
-    if (ferror(arquivo_entrada)) {
-        fprintf(stderr, "Erro de leitura do arquivo UTF-32.\n");
-        return -1;
-    }
+int convUtf32p8(FILE* input, FILE* output)
+{
+	int littleEndian = FALSE, bigEndian = FALSE;
+	unsigned int utf32, bom;
 
-    return 0; // Sucesso
+	fread(&bom, sizeof(unsigned int), 1, input);
+	printf("BOM: %02x\n", bom);
+
+	if (bom == 0x0000FEFF)
+	{
+		printf("BOM: LE\n");
+		littleEndian = TRUE;
+	}
+	else if (bom == 0xFFFE0000)
+	{
+		printf("BOM: BE\n");
+		bigEndian = TRUE;
+	}
+	else
+	{
+		printf("BOM invalido ou ausente.\n");
+		return -1;
+	}
+
+	while (fread(&utf32, sizeof(unsigned int), 1, input) == 1)
+	{
+		unsigned char b1, b2, b3, b4; // byte1..4 (so pra ser mais facil de escrever)
+		if (bigEndian)
+		{
+			utf32 = trocaOrdem(utf32);
+		}
+
+		int caso = classificaCasoUTF32(utf32);
+
+		switch (caso)
+		{
+		case UM_BYTE:
+			b1 = utf32;
+			fwrite(&b1, sizeof(unsigned char), 1, output);
+			printf("Escrevendo 1 byte: %02x\n", b1);//mensagem de debug
+			break;
+
+		case DOIS_BYTES:
+			b1 = 0b11000000 | ((utf32 >> 6) & 0x1F); //
+			b2 = 0b10000000 | (utf32 & 0x3F);
+			fwrite(&b1, sizeof(unsigned char), 1, output);
+			fwrite(&b2, sizeof(unsigned char), 1, output);
+
+			printf("Escrevendo 2 bytes: %02x %02x\n", b1, b2); //mensagem de debug
+			break;
+
+		case TRES_BYTES:
+			b1 = 0xE0 | ((utf32 >> 12) & 0x0F);
+			b2 = 0x80 | ((utf32 >> 6) & 0x3F);
+			b3 = 0x80 | (utf32 & 0x3F);
+			fwrite(&b1, sizeof(unsigned char), 1, output);
+			fwrite(&b2, sizeof(unsigned char), 1, output);
+			fwrite(&b3, sizeof(unsigned char), 1, output);
+
+			printf("Escrevendo 3 bytes: %02x %02x %02x\n", b1, b2, b3); //mensagem de debug
+			break;
+
+		case QUATRO_BYTES:
+			b1 = 0b11110000 | ((utf32 >> 18) & 0x07);
+			b2 = 0b10000000 | ((utf32 >> 12) & 0x3F);
+			b3 = 0b10000000 | ((utf32 >> 6) & 0x3F);
+			b4 = 0b10000000 | (utf32 & 0x3F);
+			fwrite(&b1, sizeof(unsigned char), 1, output);
+			fwrite(&b2, sizeof(unsigned char), 1, output);
+			fwrite(&b3, sizeof(unsigned char), 1, output);
+			fwrite(&b4, sizeof(unsigned char), 1, output);
+			printf("Escrevendo 4 bytes: %02x %02x %02x %02x\n", b1, b2, b3, b4); //mensagem de debug
+			break;
+
+		case ERRO:
+			printf("Arquivo mal formatado.\n");
+			return -1;
+			break;
+		}
+	}
+	return 0; //sucesso
 }
