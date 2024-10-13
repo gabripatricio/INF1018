@@ -6,8 +6,8 @@
 
 Alunos:
 
-Gabriel Patricio de Oliveira: 2310806
-Joao Vitor Mallet Malheiros: 2310604
+Gabriel Patricio de Oliveira: 2310806 3WA
+Joao Vitor Mallet Malheiros: 2310604 3WA
 
 */
 
