@@ -1,0 +1,11 @@
+O que eu acho importante ser dito:
+
+1) O primeiro argumento da cria_func sempre será um ponteiro, pois sempre será o endereço de uma função.
+
+2) Acredito que seja o maior problema. É sobre o que devemos operar
+
+3) O terceiro parâmetro é facilmente tratado dentro de um for...
+
+4) é onde nós devemos escrevemos o conteúdo da instruções assembly geradas dentro do código
+
+5) Para facilitar a criação do código da nova função, você pode utilizar uma variação da instrução call (a instrução call indireto), ou seja, devemos só chamar (call *rdi, pois é onde está o endereço da função mult por exemplo), mas de repente tenhamos que salvar esse endereço, pois pode ser que tenham chamadas de função.
