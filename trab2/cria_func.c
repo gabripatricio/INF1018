@@ -36,6 +36,7 @@ unsigned char *pegaBytes(int numero)
 
 void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
 {
+    printf("Endereço recebido: %p\n", f);
     // TA COM BASTANTE COMENTARIO PARA A GENTE NÃO SE PERDER... (DEPOIS TIRAMOS ALGUNS
     int indice = 0;
 
@@ -57,6 +58,7 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
     codigo[indice++] = 0xf8;
     // end
 
+    
     // copiar todos os parâmetros para os registradores corretos
     for (int i = 0; i < n; i++)
     {
@@ -66,7 +68,7 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
             switch (params[i].orig_val)
             {
             case PARAM:
-                codigo[indice++] = 0x00;
+                printf("Não era aqui.");
                 break;
             case FIX:
                 if (i == 0)
@@ -87,7 +89,7 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
 
                 break;
             case IND:
-                codigo[indice++] = 0x00;
+                printf("Não era aqui.");
                 break;
             }
             break;
@@ -96,14 +98,14 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
             switch (params[i].orig_val)
             {
             case PARAM:
-                codigo[indice++] = 0x00;
+                printf("Não era aqui.");
                 break;
 
             case FIX:
-                codigo[indice++] = 0x00;
+                printf("Não era aqui.");
                 break;
             case IND:
-                codigo[indice++] = 0x00;
+                printf("Não era aqui.");
                 break;
             }
             break;
