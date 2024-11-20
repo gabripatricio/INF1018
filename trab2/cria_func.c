@@ -40,6 +40,13 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
     codigo[indice++] = 0x20;
     // end epilogo
 
+    // movq %rdi, -8(%rbp), PROVAVELMENTE NEM PRECISA, JÁ QUE ESTAMOS COPIANDO O VALOR NA MÃO GRANDE, DEPOIS REVER ESSE PARTE... (A NECESSIDADE)
+    codigo[indice++] = 0x48;
+    codigo[indice++] = 0x89;
+    codigo[indice++] = 0x7d;
+    codigo[indice++] = 0xf8;
+    //end movq 
+
     
     // copiar todos os parâmetros para os registradores corretos
     for (int i = 0; i < n; i++)
@@ -51,7 +58,8 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
             {
             case PARAM:
             // TODO
-                printf("Não era aqui.");
+                // ja estão no lugar certo :)
+                printf("REG OK!");
                 break;
             case FIX:
                 if (i == 0)
@@ -63,6 +71,7 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
 
                 memcpy(&codigo[indice], &params[i].valor.v_int, sizeof(int));
                 indice += sizeof(int);
+                // copia bem sucedida
 
                 break;
             case IND:
