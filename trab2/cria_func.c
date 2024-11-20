@@ -40,13 +40,6 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
     codigo[indice++] = 0x20;
     // end epilogo
 
-    // movq %rdi, -8(%rbp) salvando o valor do endereco original da funcao, pode ser sobrescrito durante a chamada de alguma funcao qualquer, rdi não é callee saved...
-    codigo[indice++] = 0x48;
-    codigo[indice++] = 0x89;
-    codigo[indice++] = 0x7d;
-    codigo[indice++] = 0xf8;
-    // end
-
     
     // copiar todos os parâmetros para os registradores corretos
     for (int i = 0; i < n; i++)
@@ -99,12 +92,11 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
         }
     }
 
-    // movq -8(%rbp), %rax (recupera o endereco orignal da funcao passada como parametro), mas não devolvendo em rdi... né!
+    // ESTAVA PERDENDO A REFERENCIA PARA A FUNCAO, ESTÃO COPIEI NA MÃO GRANDE
     codigo[indice++] = 0x48;
-    codigo[indice++] = 0x8b;
-    codigo[indice++] = 0x45;
-    codigo[indice++] = 0xf8;
-    // end recuperacao
+    codigo[indice++] = 0xb8;         // movabs %rax, <endereço da função>
+    memcpy(&codigo[indice], &f, sizeof(void*));  // Copia o endereço da função para o código
+    indice += sizeof(void*);
 
     // call *%rax (endereco da funcao chamada) para fazer as operacoes que devem ser feitas, por exemplo, como seriam feitas na mult ou na memcmp...
     codigo[indice++] = 0xff;
