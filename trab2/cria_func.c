@@ -34,7 +34,7 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
     codigo[indice++] = 0x48;
     codigo[indice++] = 0x89;
     codigo[indice++] = 0xe5;
-    codigo[indice++] = 0x48; //subq 32 rsp
+    codigo[indice++] = 0x48; // subq 32 rsp
     codigo[indice++] = 0x83;
     codigo[indice++] = 0xec;
     codigo[indice++] = 0x20;
@@ -45,9 +45,8 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
     codigo[indice++] = 0x89;
     codigo[indice++] = 0x7d;
     codigo[indice++] = 0xf8;
-    //end movq 
+    // end movq
 
-    
     // copiar todos os parâmetros para os registradores corretos
     for (int i = 0; i < n; i++)
     {
@@ -57,13 +56,12 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
             switch (params[i].orig_val)
             {
             case PARAM:
-            // TODO
                 // ja estão no lugar certo :)
-                printf("REG OK!");
+                continue;
                 break;
             case FIX:
                 if (i == 0)
-                    codigo[indice++] = 0xbf; //edi
+                    codigo[indice++] = 0xbf; // edi
                 else if (i == 1)
                     codigo[indice++] = 0xbe; // esi
                 else if (i == 2)
@@ -75,8 +73,19 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
 
                 break;
             case IND:
-                // TODO
-                printf("Não era aqui.");
+                // nesse caso, pegamos o valor verdadeiro do ponteiro, passamos para um reg e ok
+                int* corrigido = (int*) params[i].valor.v_ptr;
+                int valorCorrente = *corrigido;
+                printf("Valor corrente: %d\n", valorCorrente);
+                if (i == 0)
+                    codigo[indice++] = 0xbf; // edi
+                else if (i == 1)
+                    codigo[indice++] = 0xbe; // esi
+                else if (i == 2)
+                    codigo[indice++] = 0xba; // edx
+
+                memcpy(&codigo[indice], &valorCorrente, sizeof(int));
+                indice += sizeof(int);
                 break;
             }
             break;
@@ -85,12 +94,12 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
             switch (params[i].orig_val)
             {
             case PARAM:
-            // TODO
+                // TODO
                 printf("Não era aqui.");
                 break;
 
             case FIX:
-            // TODO
+                // TODO
                 printf("Não era aqui.");
                 break;
             case IND:
@@ -103,9 +112,9 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
 
     // ESTAVA PERDENDO A REFERENCIA PARA A FUNCAO, ESTÃO COPIEI NA MÃO GRANDE
     codigo[indice++] = 0x48;
-    codigo[indice++] = 0xb8;         // movabs %rax, <endereço da função>
-    memcpy(&codigo[indice], &f, sizeof(void*));  // Copia o endereço da função para o código
-    indice += sizeof(void*);
+    codigo[indice++] = 0xb8;                     // movq %rax, <endereço da função>, o compilar coloca como movabs...
+    memcpy(&codigo[indice], &f, sizeof(void *)); // Copia o endereço da função para o código
+    indice += sizeof(void *);
 
     // call *%rax (endereco da funcao chamada) para fazer as operacoes que devem ser feitas, por exemplo, como seriam feitas na mult ou na memcmp...
     codigo[indice++] = 0xff;
@@ -115,6 +124,7 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
     // finalização
     codigo[indice++] = 0xc9;
     codigo[indice++] = 0xc3;
+    // end finalização
 
     printf("Código gerado:\n");
     for (int j = 0; j < indice; j++)
