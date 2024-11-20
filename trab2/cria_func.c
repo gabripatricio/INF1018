@@ -1,6 +1,7 @@
 #include "cria_func.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 // GABRIEL PATRICIO DE OLIVEIRA 2310806
 // JOAO VITOR MALLET MALHEIROS
@@ -21,18 +22,6 @@ gcc -Wall -Wa,--execstack -o main cria_func.c main.c
 gcc -c -o foo.o foo.s
 objdump -d foo.o
 */
-
-unsigned char *pegaBytes(int numero)
-{
-    unsigned char *bytes = (unsigned char *)malloc(4 * sizeof(unsigned char));
-
-    bytes[0] = (numero & 0xFF);       // Byte menos significativo
-    bytes[1] = (numero >> 8) & 0xFF;  // Próximo byte
-    bytes[2] = (numero >> 16) & 0xFF; // Segundo byte mais significativo
-    bytes[3] = (numero >> 24) & 0xFF; // Byte mais significativo
-
-    return bytes;
-}
 
 void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
 {
@@ -68,27 +57,23 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
             switch (params[i].orig_val)
             {
             case PARAM:
+            // TODO
                 printf("Não era aqui.");
                 break;
             case FIX:
                 if (i == 0)
-                    codigo[indice++] = 0xbf;
+                    codigo[indice++] = 0xbf; //edi
                 else if (i == 1)
-                    codigo[indice++] = 0xbe;
+                    codigo[indice++] = 0xbe; // esi
                 else if (i == 2)
-                    codigo[indice++] = 0xba;
+                    codigo[indice++] = 0xba; // edx
 
-                unsigned char *bytes = pegaBytes(params[i].valor.v_int);
-
-                for (int k = 0; k < 4; k++)
-                {
-                    codigo[indice++] = bytes[k];
-                }
-
-                free(bytes);
+                memcpy(&codigo[indice], &params[i].valor.v_int, sizeof(int));
+                indice += sizeof(int);
 
                 break;
             case IND:
+                // TODO
                 printf("Não era aqui.");
                 break;
             }
@@ -98,10 +83,12 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
             switch (params[i].orig_val)
             {
             case PARAM:
+            // TODO
                 printf("Não era aqui.");
                 break;
 
             case FIX:
+            // TODO
                 printf("Não era aqui.");
                 break;
             case IND:
@@ -112,16 +99,16 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
         }
     }
 
-    // movq -8(%rbp), %rdi (recupera o endereco orignal da funcao passada como parametro)
+    // movq -8(%rbp), %rax (recupera o endereco orignal da funcao passada como parametro), mas não devolvendo em rdi... né!
     codigo[indice++] = 0x48;
     codigo[indice++] = 0x8b;
-    codigo[indice++] = 0x7d;
+    codigo[indice++] = 0x45;
     codigo[indice++] = 0xf8;
     // end recuperacao
 
-    // call *%rdi (endereco da funcao chamada) para fazer as operacoes que devem ser feitas, por exemplo, como seriam feitas na mult ou na memcmp...
+    // call *%rax (endereco da funcao chamada) para fazer as operacoes que devem ser feitas, por exemplo, como seriam feitas na mult ou na memcmp...
     codigo[indice++] = 0xff;
-    codigo[indice++] = 0xd7;
+    codigo[indice++] = 0xd0;
     // end call
 
     // finalização
