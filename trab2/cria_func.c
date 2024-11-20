@@ -44,6 +44,10 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
     codigo[indice++] = 0x48;
     codigo[indice++] = 0x89;
     codigo[indice++] = 0xe5;
+    codigo[indice++] = 0x48; //subq 32 rsp
+    codigo[indice++] = 0x83;
+    codigo[indice++] = 0xec;
+    codigo[indice++] = 0x20;
     // end epilogo
 
     // movq %rdi, -8(%rbp) salvando o valor do endereco original da funcao, pode ser sobrescrito durante a chamada de alguma funcao qualquer, rdi não é callee saved...
