@@ -21,6 +21,8 @@ gcc -Wall -Wa,--execstack -o main cria_func.c main.c
 
 gcc -c -o foo.o foo.s
 objdump -d foo.o
+
+objdump -D -b binary -m i386:x86-64 codigo.bin
 */
 
 void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
@@ -73,19 +75,38 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
 
                 break;
             case IND:
-                // nesse caso, pegamos o valor verdadeiro do ponteiro, passamos para um reg e ok
-                int* corrigido = (int*) params[i].valor.v_ptr;
-                int valorCorrente = *corrigido;
-                printf("Valor corrente: %d\n", valorCorrente);
-                if (i == 0)
-                    codigo[indice++] = 0xbf; // edi
-                else if (i == 1)
-                    codigo[indice++] = 0xbe; // esi
-                else if (i == 2)
-                    codigo[indice++] = 0xba; // edx
-
-                memcpy(&codigo[indice], &valorCorrente, sizeof(int));
-                indice += sizeof(int);
+            // o que eu movo aqui é o valor do ponteiro para r9 e depois (r9) para o respectivo reg
+                int* endereco = (int*) params[i].valor.v_ptr;
+                if (i == 0){
+                // vou mover esse endereço para r9 se for o primeiro param 
+                    codigo[indice++] = 0x49;
+                    codigo[indice++] = 0xb9;
+                    memcpy(&codigo[indice], &endereco, sizeof(int *));
+                    indice += sizeof(int*);
+                    codigo[indice++] = 0x41;
+                    codigo[indice++] = 0x8b;
+                    codigo[indice++] = 0x39;
+                }
+                else if (i == 1){
+                // vou mover esse endereço para r10 se for o segundo param
+                    codigo[indice++] = 0x49;
+                    codigo[indice++] = 0xba;
+                    memcpy(&codigo[indice], &endereco,  sizeof(int *));
+                    indice += sizeof(int*);
+                    codigo[indice++] = 0x41;
+                    codigo[indice++] = 0x8b;
+                    codigo[indice++] = 0x32;
+                }
+                else if (i == 2){
+                // vou mover esse endereco para r11 se for o terceiro param
+                    codigo[indice++] = 0x49;
+                    codigo[indice++] = 0xbb;
+                    memcpy(&codigo[indice], &endereco, sizeof(int *));
+                    indice += sizeof(int*);
+                    codigo[indice++] = 0x41;
+                    codigo[indice++] = 0x8b;
+                    codigo[indice++] = 0x13;
+                }
                 break;
             }
             break;
@@ -95,15 +116,30 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
             {
             case PARAM:
                 // TODO
-                printf("Não era aqui.");
+                // já era aqui :)
+                continue;
                 break;
 
             case FIX:
-                // TODO
-                printf("Não era aqui.");
+                if (i == 0){
+                    codigo[indice++] = 0x48;
+                    codigo[indice++] = 0xbf; // rdi
+                }
+                else if (i == 1){
+                    codigo[indice++] = 0x48;
+                    codigo[indice++] = 0xbe; // rsi
+                    }
+                else if (i == 2){
+                    codigo[indice++] = 0x48;
+                    codigo[indice++] = 0xba; // rdx
+                }
+                memcpy(&codigo[indice], params[i].valor.v_ptr, sizeof(void *));
+                printf("Endereço recebido em cria_func: %p\n", params[i].valor.v_ptr)    ;
+                indice += sizeof(void *);            
                 break;
             case IND:
-                printf("Não era aqui.");
+            printf("Não era aqui\n");
+                // TODO
                 break;
             }
             break;
@@ -132,4 +168,14 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
         printf("%02x ", codigo[j]);
     }
     printf("\n");
+
+    FILE *fout = fopen("codigo.bin", "wb");
+    if (fout == NULL) {
+        perror("Erro ao abrir o arquivo para escrita");
+        return;
+    }
+    fwrite(codigo, sizeof(unsigned char), indice, fout);
+    fclose(fout);
+
+    printf("Código gerado gravado em 'codigo.bin'. Agora você pode disassemblar com objdump.\n");
 }
