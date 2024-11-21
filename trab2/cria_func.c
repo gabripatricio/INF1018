@@ -177,5 +177,5 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
     fwrite(codigo, sizeof(unsigned char), indice, fout);
     fclose(fout);
 
-    printf("Código gerado gravado em 'codigo.bin'. Agora você pode disassemblar com objdump.\n");
+    printf("Código gerado gravado em 'codigo.bin'.\n");
 }
