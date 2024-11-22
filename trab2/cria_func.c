@@ -133,7 +133,7 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
                     codigo[indice++] = 0x48;
                     codigo[indice++] = 0xba; // rdx
                 }
-                memcpy(&codigo[indice], params[i].valor.v_ptr, sizeof(void *));
+                memcpy(&codigo[indice], &params[i].valor.v_ptr, sizeof(void *));
                 printf("Endereço recebido em cria_func: %p\n", params[i].valor.v_ptr)    ;
                 indice += sizeof(void *);            
                 break;
