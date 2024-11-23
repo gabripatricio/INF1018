@@ -1,49 +1,38 @@
-# 1 %rdi %edi %di %dil
-# 2 %rsi %esi %si %sil
-# 3 %rdx %edx %dx %dl
-
-.text 
+.text
 
 .globl boo
 
+
 boo:
-pushq %rbp
-movq %rsp, %rbp
+    pushq %rbp
+    movq %rsp, %rbp
+    subq $16, %rsp
 
+    loop:
 
-loop:
+    cmpl $0, %esi
+    je fim
 
-cmpl $0, %esi
+    # movendo rdi para a pilha
+    movq %rdi, -12(%rbp)
+    # salvando n na pilha
+    movl %esi, -4(%rbp)
+    # salvando val na pilha
+    movl %edx, -16(%rbp)
 
-je end
+    movl %edx, %esi
+    call f
+    # Pegando o valor de volta
+    movq -12(%rbp), %rdi
+    movl %eax, 4(%rdi)
+    movl -4(%rbp), %esi
+    movl -16(%rbp), %edx
 
+    addq $8, %rdi
+    decl %esi
 
-movl 4(%rdi), %ebx # ebx += px->val2
+    jmp loop
 
-pushq %rdi # salva rdi antes de passar na chamada de funcao (ponteiro)
-pushq %rdx # idem (val)
-pushq %rsi # salva n
-
-
-# ajustando os parametros
-
-movl (%rdi), %edi # px->val1 para o primeiro parametro
-# como eu nao sei o comportamento de f eu vou assumir que eu corretamente salvei o valor de edx... mas posso simplesmente passar edx (segundo parametro)
-
-call f
-
-popq %rsi
-popq %rdx
-popq %rdi
-
-addq $8, %rdi
-
-subl $1, %esi # n --
-
-
-jmp loop
-
-
-end:
-leave 
-ret
+    fim:
+    leave
+    ret
