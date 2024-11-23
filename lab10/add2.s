@@ -1,8 +1,8 @@
 .text
 
-.globl add
+.globl add2
 
-add:
+add2:
     pushq %rbp
     movq %rsp, %rbp
     subq $16, %rsp
@@ -15,7 +15,7 @@ add:
     
     movl %ecx, -4(%rbp)
     
-    call add
+    call add2
     
     movl -4(%rbp), %ecx
     
