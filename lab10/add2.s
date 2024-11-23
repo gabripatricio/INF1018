@@ -1,28 +1,30 @@
-
 .text
- 
+
 .globl add
- 
+
 add:
-
-pushq %rbp 
-movq %rsp, %rbp
-
-movl $0, %ecx # int a = 0
- 
-loop:
- 
-cmpq $0, %rdi # != NULL
- 
-je end_for 
- 
-
-addl (%rdi), %ecx
-movq 8(%rdi), %rdi
-jmp loop
- 
- 
-end_for:
-movl %ecx, %eax
-leave
-ret
+    pushq %rbp
+    movq %rsp, %rbp
+    subq $16, %rsp
+    
+    cmpq $0, %rdi
+    je fim
+    
+    movl (%rdi), %ecx
+    movq 8(%rdi), %rdi
+    
+    movl %ecx, -4(%rbp)
+    
+    call add
+    
+    movl -4(%rbp), %ecx
+    
+    addl %ecx, %eax
+    
+    leave
+    ret
+    
+    fim:
+    movl $0, %eax
+    leave
+    ret
