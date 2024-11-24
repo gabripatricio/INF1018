@@ -8,14 +8,14 @@ foo:
     
     cvtss2sd %xmm1, %xmm1
     
-    movq %xmm0, %xmm2
+    movsd %xmm0, %xmm2
     addsd %xmm1, %xmm2 # a + b 
     
-    movq %xmm0, %xmm3
+    movsd %xmm0, %xmm3
     subsd %xmm1, %xmm3
     
     mulsd %xmm2, %xmm3
-    movq %xmm3, %xmm0
+    movsd %xmm3, %xmm0
     
     cvtsd2ss %xmm0, %xmm0
     leave
