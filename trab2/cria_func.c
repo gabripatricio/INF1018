@@ -57,57 +57,7 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
             contaPARAM++;
     }
 
-    if (contaPARAM > 0) // aqui ele desalinhou tudo, tem que corrigir...
-    {
-        if (n == 2)
-        {
-            if (contaPARAM == 1 && params[1].orig_val == PARAM)
-            {
-                // eu movo de di pra si
-                codigo[indice++] = 0x48;
-                codigo[indice++] = 0x89;
-                codigo[indice++] = 0xfe;
-            }
-        }
-        if (n==3)
-        {
-            if(contaPARAM == 2 && params[2].orig_val == PARAM)
-            {
-                // movo de si pra dx, pq di ta "ocupado" com o fix, por exemplo da caso 3
-                // mas tem que passar de si para dx primeiro, para nao perder a referencia
-                
-                codigo[indice++] = 0x48;
-                codigo[indice++] = 0x89;
-                codigo[indice++] = 0xf2;
-                
-                if (params[0].orig_val != PARAM)
-                {
-                    // movo de di, pra si
-                    codigo[indice++] = 0x48;
-                    codigo[indice++] = 0x89;
-                    codigo[indice++] = 0xfe;
-                }
-
-                if (contaPARAM == 1 && params[0].orig_val != PARAM)
-                {
-                    if (params[1].orig_val == PARAM)
-                    {
-                        // di --> si
-                        codigo[indice++] = 0x48;
-                        codigo[indice++] = 0x89;
-                        codigo[indice++] = 0xfe;
-                    }
-                    else if (params[2].orig_val == PARAM)
-                    {
-                        // di --> dx
-                        codigo[indice++] = 0x48;
-                        codigo[indice++] = 0x89;
-                        codigo[indice++] = 0xfa;
-                    }
-                }
-            }
-        }
-    }
+    
 
     // copiar todos os parâmetros para os registradores corretos
     for (int i = 0; i < n; i++)
