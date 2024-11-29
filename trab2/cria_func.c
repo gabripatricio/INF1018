@@ -24,10 +24,11 @@ objdump -d foo.o
 
 objdump -D -b binary -m i386:x86-64 codigo.bin
 */
-void epilogo(unsigned char* c, int* i);
+
+void finalizacao(unsigned char* c, int* i); 
 void prologo(unsigned char* c, int* i);
 void movrdirsi(unsigned char* c, int* i);
-void movrdirdx(unsigned char* codigo, int* indice);
+void movrdirdx(unsigned char* c, int* i);
 void movrsirdx(unsigned char* c, int* i);
 
 
@@ -47,7 +48,7 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
     // end movq
 
 
-    // tem que ver se está tudo corretamente, pois que chama pode não passar todos os parâmetros
+    // tem que ver se está tudo correto, pois quem chama pode não passar todos os parâmetros, o que desalinha 
     int contaPARAM = 0;
     for (int i = 0; i < n; i++)
     {
@@ -219,6 +220,7 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
                 printf("Endereço recebido em cria_func: %p\n", params[i].valor.v_ptr);
                 indice += sizeof(void *);
                 break;
+
             case IND:
                 printf("Não era aqui\n");
                 // TODO
@@ -262,11 +264,9 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
     printf("Código gerado gravado em 'codigo.bin'.\n");
 }
 
-void epilogo(unsigned char *codigo, int *indice) {
-    // leave
-    codigo[(*indice)++] = 0xc9;
-    // ret
-    codigo[(*indice)++] = 0xc3;
+void finalizacao(unsigned char *codigo, int *indice) {
+    codigo[(*indice)++] = 0xc9; // leave
+    codigo[(*indice)++] = 0xc3; // ret    
 }
 
 void prologo(unsigned char *codigo, int *indice)
