@@ -24,6 +24,12 @@ objdump -d foo.o
 
 objdump -D -b binary -m i386:x86-64 codigo.bin
 */
+void epilogo(unsigned char* c, int* i);
+void prologo(unsigned char* c, int* i);
+void movrdirsi(unsigned char* c, int* i);
+void movrdirdx(unsigned char* codigo, int* indice);
+void movrsirdx(unsigned char* c, int* i);
+
 
 void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
 {
@@ -31,16 +37,7 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
     // TA COM BASTANTE COMENTARIO PARA A GENTE NÃO SE PERDER... (DEPOIS TIRAMOS ALGUNS
     int indice = 0;
 
-    // epilogo da funcao, i.e., pushq rbp, movq rsp rbp, subq 32 (pode ser necessario aumentar)
-    codigo[indice++] = 0x55;
-    codigo[indice++] = 0x48;
-    codigo[indice++] = 0x89;
-    codigo[indice++] = 0xe5;
-    codigo[indice++] = 0x48; // subq 32 rsp
-    codigo[indice++] = 0x83;
-    codigo[indice++] = 0xec;
-    codigo[indice++] = 0x20;
-    // end epilogo
+    prologo(codigo, &indice);
 
     // movq %rdi, -8(%rbp), PROVAVELMENTE NEM PRECISA, JÁ QUE ESTAMOS COPIANDO O VALOR NA MÃO GRANDE, DEPOIS REVER ESSE PARTE... (A NECESSIDADE)
     codigo[indice++] = 0x48;
@@ -52,12 +49,10 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
 
     // tem que ver se está tudo corretamente, pois que chama pode não passar todos os parâmetros
     int contaPARAM = 0;
-    int atual =0;
     for (int i = 0; i < n; i++)
     {
         if (params[i].orig_val == PARAM)
             contaPARAM++;
-        else atual++;
     }
 
     if (contaPARAM != n)
@@ -67,9 +62,7 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
             if (params[0].orig_val != PARAM)
             {
                 // tenho que mover de di para si
-                codigo[indice++] = 0x48;
-                codigo[indice++] = 0x89;
-                codigo[indice++] = 0xfe; // mov %rdi, %rsi
+                movrdirsi(codigo, &indice);
             }
         }
 
@@ -82,16 +75,12 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
                     if (params[1].orig_val == PARAM)
                     {
                         // tenho que mover de di para si
-                        codigo[indice++] = 0x48;
-                        codigo[indice++] = 0x89;
-                        codigo[indice++] = 0xfe; // mov %rdi, %rsi
+                        movrdirsi(codigo, &indice);
                     }
                     else if (params[2].orig_val == PARAM)
                     {
                         // Movo de rdi para rdx
-                        codigo[indice++] = 0x48;
-                        codigo[indice++] = 0x89;
-                        codigo[indice++] = 0xfa; // mov %rdi, %rdx
+                        movrdirdx(codigo, &indice);
                     }
                 }
                 // nao tem else, pois está no lugar certo.
@@ -102,21 +91,15 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
                 {
                     // tenho que shiftar todos para a direita
                     // fazendo si --> dx primeiro
-                    codigo[indice++] = 0x48;
-                    codigo[indice++] = 0x89;
-                    codigo[indice++] = 0xf2; // mov %rsi, %rdx
+                    movrsirdx(codigo, &indice);
 
                     // Movo de rdi para rsi
-                    codigo[indice++] = 0x48;
-                    codigo[indice++] = 0x89;
-                    codigo[indice++] = 0xfe; // mov %rdi, %rsi
+                    movrdirsi(codigo, &indice);
                 }
                 if (params[1].orig_val != PARAM)
                 {
-                    // so tenho que mover um, pois signifca que o outro ta no lugar certo (di)
-                    codigo[indice++] = 0x48;
-                    codigo[indice++] = 0x89;
-                    codigo[indice++] = 0xf2; // mov %rsi, %rdx
+                    // so tenho que mover um, pois significa que o outro ta no lugar certo (di)
+                    movrsirdx(codigo, &indice);
                 }
             }
         }
@@ -257,8 +240,7 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
     // end call
 
     // finalização
-    codigo[indice++] = 0xc9;
-    codigo[indice++] = 0xc3;
+    epilogo(codigo, &indice);
     // end finalização
 
     printf("Código gerado:\n");
@@ -279,9 +261,45 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
 
     printf("Código gerado gravado em 'codigo.bin'.\n");
 }
-/*
-void epilogo(char* codigo, int indice)
-{
 
+void epilogo(unsigned char *codigo, int *indice) {
+    // leave
+    codigo[(*indice)++] = 0xc9;
+    // ret
+    codigo[(*indice)++] = 0xc3;
 }
-*/
+
+void prologo(unsigned char *codigo, int *indice)
+{
+    // epilogo da funcao, i.e., pushq rbp, movq rsp rbp, subq 32 (pode ser necessario aumentar)
+    codigo[(*indice)++] = 0x55;
+    codigo[(*indice)++] = 0x48;
+    codigo[(*indice)++] = 0x89;
+    codigo[(*indice)++] = 0xe5;
+    codigo[(*indice)++] = 0x48; // subq 32 rsp
+    codigo[(*indice)++] = 0x83;
+    codigo[(*indice)++] = 0xec;
+    codigo[(*indice)++] = 0x20;
+    // end epilogo
+}
+
+void movrdirsi(unsigned char* codigo, int* indice)
+{
+    codigo[(*indice)++] = 0x48;
+    codigo[(*indice)++] = 0x89;
+    codigo[(*indice)++] = 0xfe; // mov %rdi, %rsi
+}
+
+void movrsirdx(unsigned char* codigo, int* indice)
+{
+    codigo[(*indice)++] = 0x48;
+    codigo[(*indice)++] = 0x89;
+    codigo[(*indice)++] = 0xf2; // mov %rsi, %rdx
+}
+
+void movrdirdx(unsigned char* codigo, int* indice)
+{
+    codigo[(*indice)++] = 0x48;
+    codigo[(*indice)++] = 0x89;
+    codigo[(*indice)++] = 0xfa; // mov %rdi, %rdx
+}
