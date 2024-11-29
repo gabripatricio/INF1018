@@ -49,15 +49,98 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
     codigo[indice++] = 0xf8;
     // end movq
 
-    int contaPARAM = 0;
 
+    // tem que ver se está tudo corretamente, pois que chama pode não passar todos os parâmetros
+    int contaPARAM = 0;
+    int atual =0;
     for (int i = 0; i < n; i++)
     {
         if (params[i].orig_val == PARAM)
             contaPARAM++;
+        else atual++;
     }
 
+    if (contaPARAM != n)
+    {
+        if (n == 2)
+        {
+            if (params[0].orig_val != PARAM)
+            {
+                // tenho que mover de di para si
+                codigo[indice++] = 0x48;
+                codigo[indice++] = 0x89;
+                codigo[indice++] = 0xfe; // mov %rdi, %rsi
+            }
+        }
+
+        if (n == 3)
+        {
+            if(contaPARAM == 1)
+            {
+                if (params[0].orig_val != PARAM)
+                {
+                    if (params[1].orig_val == PARAM)
+                    {
+                        // tenho que mover de di para si
+                        codigo[indice++] = 0x48;
+                        codigo[indice++] = 0x89;
+                        codigo[indice++] = 0xfe; // mov %rdi, %rsi
+                    }
+                    else if (params[2].orig_val == PARAM)
+                    {
+                        // Movo de rdi para rdx
+                        codigo[indice++] = 0x48;
+                        codigo[indice++] = 0x89;
+                        codigo[indice++] = 0xfa; // mov %rdi, %rdx
+                    }
+                }
+                // nao tem else, pois está no lugar certo.
+            }
+            else // 2 parametros, 3 não pode pq não é != n
+            {
+                if (params[0].orig_val != PARAM)
+                {
+                    // tenho que shiftar todos para a direita
+                    // fazendo si --> dx primeiro
+                    codigo[indice++] = 0x48;
+                    codigo[indice++] = 0x89;
+                    codigo[indice++] = 0xf2; // mov %rsi, %rdx
+
+                    // Movo de rdi para rsi
+                    codigo[indice++] = 0x48;
+                    codigo[indice++] = 0x89;
+                    codigo[indice++] = 0xfe; // mov %rdi, %rsi
+                }
+                if (params[1].orig_val != PARAM)
+                {
+                    // so tenho que mover um, pois signifca que o outro ta no lugar certo (di)
+                    codigo[indice++] = 0x48;
+                    codigo[indice++] = 0x89;
+                    codigo[indice++] = 0xf2; // mov %rsi, %rdx
+                }
+            }
+        }
+    }
+
+    /*
+    n == 2:
+
+    Caso (1º FIX, 2º PARAM): Move rdi → rsi. Resolvido.
+    Caso (1º PARAM, 2º FIX): Nenhuma ação necessária. Resolvido.
+
+    n == 3:
+
+    1º FIX, 2º PARAM, 3º FIX: Move rdi → rsi. Resolvido.
+    1º FIX, 2º FIX, 3º PARAM: Move rdi → rdx. Resolvido.
+    1º PARAM, 2º FIX, 3º FIX: Nenhuma ação necessária. Resolvido.
+    1º FIX, 2º FIX, 3º FIX (não há PARAM): Nenhuma ação necessária. Resolvido.
+    1º FIX, 2º PARAM, 3º PARAM:
+        Move rsi → rdx.
+        Move rdi → rsi. Resolvido.
+    1º PARAM, 2º FIX, 3º PARAM:
+        Move rsi → rdx. Resolvido.
     
+    */
 
     // copiar todos os parâmetros para os registradores corretos
     for (int i = 0; i < n; i++)
@@ -85,34 +168,37 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
 
                 break;
             case IND:
-            // o que eu movo aqui é o valor do ponteiro para r9 e depois (r9) para o respectivo reg
-                int* endereco = (int*) params[i].valor.v_ptr;
-                if (i == 0){
-                // vou mover esse endereço para r9 se for o primeiro param 
+                // o que eu movo aqui é o valor do ponteiro para r9 e depois (r9) para o respectivo reg
+                int *endereco = (int *)params[i].valor.v_ptr;
+                if (i == 0)
+                {
+                    // vou mover esse endereço para r9 se for o primeiro param
                     codigo[indice++] = 0x49;
                     codigo[indice++] = 0xb9;
                     memcpy(&codigo[indice], &endereco, sizeof(int *));
-                    indice += sizeof(int*);
+                    indice += sizeof(int *);
                     codigo[indice++] = 0x41;
                     codigo[indice++] = 0x8b;
                     codigo[indice++] = 0x39;
                 }
-                else if (i == 1){
-                // vou mover esse endereço para r10 se for o segundo param
+                else if (i == 1)
+                {
+                    // vou mover esse endereço para r10 se for o segundo param
                     codigo[indice++] = 0x49;
                     codigo[indice++] = 0xba;
-                    memcpy(&codigo[indice], &endereco,  sizeof(int *));
-                    indice += sizeof(int*);
+                    memcpy(&codigo[indice], &endereco, sizeof(int *));
+                    indice += sizeof(int *);
                     codigo[indice++] = 0x41;
                     codigo[indice++] = 0x8b;
                     codigo[indice++] = 0x32;
                 }
-                else if (i == 2){
-                // vou mover esse endereco para r11 se for o terceiro param
+                else if (i == 2)
+                {
+                    // vou mover esse endereco para r11 se for o terceiro param
                     codigo[indice++] = 0x49;
                     codigo[indice++] = 0xbb;
                     memcpy(&codigo[indice], &endereco, sizeof(int *));
-                    indice += sizeof(int*);
+                    indice += sizeof(int *);
                     codigo[indice++] = 0x41;
                     codigo[indice++] = 0x8b;
                     codigo[indice++] = 0x13;
@@ -131,24 +217,27 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
                 break;
 
             case FIX:
-                if (i == 0){
+                if (i == 0)
+                {
                     codigo[indice++] = 0x48;
                     codigo[indice++] = 0xbf; // rdi
                 }
-                else if (i == 1){
+                else if (i == 1)
+                {
                     codigo[indice++] = 0x48;
                     codigo[indice++] = 0xbe; // rsi
-                    }
-                else if (i == 2){
+                }
+                else if (i == 2)
+                {
                     codigo[indice++] = 0x48;
                     codigo[indice++] = 0xba; // rdx
                 }
                 memcpy(&codigo[indice], &params[i].valor.v_ptr, sizeof(void *));
-                printf("Endereço recebido em cria_func: %p\n", params[i].valor.v_ptr)    ;
-                indice += sizeof(void *);            
+                printf("Endereço recebido em cria_func: %p\n", params[i].valor.v_ptr);
+                indice += sizeof(void *);
                 break;
             case IND:
-            printf("Não era aqui\n");
+                printf("Não era aqui\n");
                 // TODO
                 break;
             }
@@ -180,7 +269,8 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
     printf("\n");
 
     FILE *fout = fopen("codigo.bin", "wb");
-    if (fout == NULL) {
+    if (fout == NULL)
+    {
         perror("Erro ao abrir o arquivo para escrita");
         return;
     }
@@ -189,3 +279,9 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
 
     printf("Código gerado gravado em 'codigo.bin'.\n");
 }
+/*
+void epilogo(char* codigo, int indice)
+{
+
+}
+*/
