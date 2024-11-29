@@ -271,7 +271,7 @@ void epilogo(unsigned char *codigo, int *indice) {
 
 void prologo(unsigned char *codigo, int *indice)
 {
-    // epilogo da funcao, i.e., pushq rbp, movq rsp rbp, subq 32 (pode ser necessario aumentar)
+    // prologo da funcao, i.e., pushq rbp, movq rsp rbp, subq 32 (pode ser necessario aumentar)
     codigo[(*indice)++] = 0x55;
     codigo[(*indice)++] = 0x48;
     codigo[(*indice)++] = 0x89;
@@ -280,7 +280,7 @@ void prologo(unsigned char *codigo, int *indice)
     codigo[(*indice)++] = 0x83;
     codigo[(*indice)++] = 0xec;
     codigo[(*indice)++] = 0x20;
-    // end epilogo
+    // end prologo
 }
 
 void movrdirsi(unsigned char* codigo, int* indice)
