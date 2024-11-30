@@ -222,8 +222,40 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
                 break;
 
             case IND:
-                printf("Não era aqui\n");
-                // TODO
+                void* endereco = params[i].valor.v_ptr;
+                if (i == 0)
+                {
+                    // move para r9 e desreferencia em rdi
+                    codigo[indice++] = 0x49;
+                    codigo [indice++] = 0xb9;
+                    memcpy(&codigo[indice], &endereco, sizeof(void*));
+                    indice += sizeof(void*);
+                    codigo[indice++] = 0x49;
+                    codigo[indice++] = 0x8b;
+                    codigo[indice++] = 0x39;
+                }
+                else if (i == 2)
+                {
+                    // move para r10 e desreferencia em rsi
+                    codigo[indice++] = 0x49;
+                    codigo [indice++] = 0xba;
+                    memcpy(&codigo[indice], &endereco, sizeof(void*));
+                    indice += sizeof(void*);
+                    codigo[indice++] = 0x49;
+                    codigo[indice++] = 0x8b;
+                    codigo[indice++] = 0x32;
+                }
+                else
+                {
+                    // move para r11 e desreferencia em rdx
+                    codigo[indice++] = 0x49;
+                    codigo [indice++] = 0xbb;
+                    memcpy(&codigo[indice], &endereco, sizeof(void*));
+                    indice += sizeof(void*);
+                    codigo[indice++] = 0x49;
+                    codigo[indice++] = 0x8b;
+                    codigo[indice++] = 0x13;
+                }
                 break;
             }
             break;
@@ -242,7 +274,7 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
     // end call
 
     // finalização
-    epilogo(codigo, &indice);
+    finalizacao(codigo, &indice);
     // end finalização
 
     printf("Código gerado:\n");
