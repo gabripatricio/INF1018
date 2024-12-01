@@ -4,51 +4,31 @@
 #include <string.h>
 
 // GABRIEL PATRICIO DE OLIVEIRA 2310806
-// JOAO VITOR MALLET MALHEIROS
+// JOAO VITOR MALLET MALHEIROS 2310604
 
 /*
-
-pushq %rbp = 0x55
-movq %rsp, %rbp = 0x48, 0x89, 0xe5
-mov const reg = (codigo reg), (valorHex)  --> por exemplo movl $5, %esi = 0xbf 0x04 0x00 0x00 0x00 e se fosse movl $5, %esi 0xbe 0x05 0x00 0x00 0x00, perceba que sao 4 bytes o inteiro! Esse eu não sei direito: a instrucao mov, as vezes tem 3 componentes as vezes tem apenas duas, mas sempre tem 0x89.
-leave = 0xc9
-ret = 0xc3
-
-movl constante, %esi = be constante
-movl constante, %edx = ba constante
-
+Para compilar:
 gcc -Wall -Wa,--execstack -o main cria_func.c main.c
 
+Para gerar código de máquina
 gcc -c -o foo.o foo.s
 objdump -d foo.o
 
-objdump -D -b binary -m i386:x86-64 codigo.bin
 */
 
-void finalizacao(unsigned char* c, int* i); 
-void prologo(unsigned char* c, int* i);
-void movrdirsi(unsigned char* c, int* i);
-void movrdirdx(unsigned char* c, int* i);
-void movrsirdx(unsigned char* c, int* i);
-
+void finalizacao(unsigned char *c, int *i);
+void prologo(unsigned char *c, int *i);
+void movrdirsi(unsigned char *c, int *i);
+void movrdirdx(unsigned char *c, int *i);
+void movrsirdx(unsigned char *c, int *i);
 
 void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
 {
-    printf("Endereço recebido: %p\n", f);
-    // TA COM BASTANTE COMENTARIO PARA A GENTE NÃO SE PERDER... (DEPOIS TIRAMOS ALGUNS
     int indice = 0;
 
     prologo(codigo, &indice);
 
-    // movq %rdi, -8(%rbp), PROVAVELMENTE NEM PRECISA, JÁ QUE ESTAMOS COPIANDO O VALOR NA MÃO GRANDE, DEPOIS REVER ESSE PARTE... (A NECESSIDADE)
-    codigo[indice++] = 0x48;
-    codigo[indice++] = 0x89;
-    codigo[indice++] = 0x7d;
-    codigo[indice++] = 0xf8;
-    // end movq
-
-
-    // tem que ver se está tudo correto, pois quem chama pode não passar todos os parâmetros, o que desalinha 
+    // tem que ver se está tudo correto, pois quem chama pode não passar todos os parâmetros, o que desalinha
     int contaPARAM = 0;
     for (int i = 0; i < n; i++)
     {
@@ -69,7 +49,7 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
 
         if (n == 3)
         {
-            if(contaPARAM == 1)
+            if (contaPARAM == 1)
             {
                 if (params[0].orig_val != PARAM)
                 {
@@ -105,26 +85,6 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
             }
         }
     }
-
-    /*
-    n == 2:
-
-    Caso (1º FIX, 2º PARAM): Move rdi → rsi. Resolvido.
-    Caso (1º PARAM, 2º FIX): Nenhuma ação necessária. Resolvido.
-
-    n == 3:
-
-    1º FIX, 2º PARAM, 3º FIX: Move rdi → rsi. Resolvido.
-    1º FIX, 2º FIX, 3º PARAM: Move rdi → rdx. Resolvido.
-    1º PARAM, 2º FIX, 3º FIX: Nenhuma ação necessária. Resolvido.
-    1º FIX, 2º FIX, 3º FIX (não há PARAM): Nenhuma ação necessária. Resolvido.
-    1º FIX, 2º PARAM, 3º PARAM:
-        Move rsi → rdx.
-        Move rdi → rsi. Resolvido.
-    1º PARAM, 2º FIX, 3º PARAM:
-        Move rsi → rdx. Resolvido.
-    
-    */
 
     // copiar todos os parâmetros para os registradores corretos
     for (int i = 0; i < n; i++)
@@ -195,7 +155,6 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
             switch (params[i].orig_val)
             {
             case PARAM:
-                // TODO
                 // já era aqui :)
                 continue;
                 break;
@@ -217,19 +176,18 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
                     codigo[indice++] = 0xba; // rdx
                 }
                 memcpy(&codigo[indice], &params[i].valor.v_ptr, sizeof(void *));
-                printf("Endereço recebido em cria_func: %p\n", params[i].valor.v_ptr);
                 indice += sizeof(void *);
                 break;
 
             case IND:
-                void* endereco = params[i].valor.v_ptr;
+                void *endereco = params[i].valor.v_ptr;
                 if (i == 0)
                 {
                     // move para r9 e desreferencia em rdi
                     codigo[indice++] = 0x49;
-                    codigo [indice++] = 0xb9;
-                    memcpy(&codigo[indice], &endereco, sizeof(void*));
-                    indice += sizeof(void*);
+                    codigo[indice++] = 0xb9;
+                    memcpy(&codigo[indice], &endereco, sizeof(void *));
+                    indice += sizeof(void *);
                     codigo[indice++] = 0x49;
                     codigo[indice++] = 0x8b;
                     codigo[indice++] = 0x39;
@@ -238,9 +196,9 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
                 {
                     // move para r10 e desreferencia em rsi
                     codigo[indice++] = 0x49;
-                    codigo [indice++] = 0xba;
-                    memcpy(&codigo[indice], &endereco, sizeof(void*));
-                    indice += sizeof(void*);
+                    codigo[indice++] = 0xba;
+                    memcpy(&codigo[indice], &endereco, sizeof(void *));
+                    indice += sizeof(void *);
                     codigo[indice++] = 0x49;
                     codigo[indice++] = 0x8b;
                     codigo[indice++] = 0x32;
@@ -249,9 +207,9 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
                 {
                     // move para r11 e desreferencia em rdx
                     codigo[indice++] = 0x49;
-                    codigo [indice++] = 0xbb;
-                    memcpy(&codigo[indice], &endereco, sizeof(void*));
-                    indice += sizeof(void*);
+                    codigo[indice++] = 0xbb;
+                    memcpy(&codigo[indice], &endereco, sizeof(void *));
+                    indice += sizeof(void *);
                     codigo[indice++] = 0x49;
                     codigo[indice++] = 0x8b;
                     codigo[indice++] = 0x13;
@@ -262,7 +220,7 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
         }
     }
 
-    // ESTAVA PERDENDO A REFERENCIA PARA A FUNCAO, ESTÃO COPIEI NA MÃO GRANDE
+    // copio o endereco da funcao para o lugar certo
     codigo[indice++] = 0x48;
     codigo[indice++] = 0xb8;                     // movq %rax, <endereço da função>, o compilar coloca como movabs...
     memcpy(&codigo[indice], &f, sizeof(void *)); // Copia o endereço da função para o código
@@ -276,29 +234,12 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
     // finalização
     finalizacao(codigo, &indice);
     // end finalização
-
-    printf("Código gerado:\n");
-    for (int j = 0; j < indice; j++)
-    {
-        printf("%02x ", codigo[j]);
-    }
-    printf("\n");
-
-    FILE *fout = fopen("codigo.bin", "wb");
-    if (fout == NULL)
-    {
-        perror("Erro ao abrir o arquivo para escrita");
-        return;
-    }
-    fwrite(codigo, sizeof(unsigned char), indice, fout);
-    fclose(fout);
-
-    printf("Código gerado gravado em 'codigo.bin'.\n");
 }
 
-void finalizacao(unsigned char *codigo, int *indice) {
+void finalizacao(unsigned char *codigo, int *indice)
+{
     codigo[(*indice)++] = 0xc9; // leave
-    codigo[(*indice)++] = 0xc3; // ret    
+    codigo[(*indice)++] = 0xc3; // ret
 }
 
 void prologo(unsigned char *codigo, int *indice)
@@ -315,21 +256,21 @@ void prologo(unsigned char *codigo, int *indice)
     // end prologo
 }
 
-void movrdirsi(unsigned char* codigo, int* indice)
+void movrdirsi(unsigned char *codigo, int *indice)
 {
     codigo[(*indice)++] = 0x48;
     codigo[(*indice)++] = 0x89;
     codigo[(*indice)++] = 0xfe; // mov %rdi, %rsi
 }
 
-void movrsirdx(unsigned char* codigo, int* indice)
+void movrsirdx(unsigned char *codigo, int *indice)
 {
     codigo[(*indice)++] = 0x48;
     codigo[(*indice)++] = 0x89;
     codigo[(*indice)++] = 0xf2; // mov %rsi, %rdx
 }
 
-void movrdirdx(unsigned char* codigo, int* indice)
+void movrdirdx(unsigned char *codigo, int *indice)
 {
     codigo[(*indice)++] = 0x48;
     codigo[(*indice)++] = 0x89;
