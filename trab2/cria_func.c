@@ -192,7 +192,7 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
                     codigo[indice++] = 0x8b;
                     codigo[indice++] = 0x39;
                 }
-                else if (i == 2)
+                else if (i == 1)
                 {
                     // move para r10 e desreferencia em rsi
                     codigo[indice++] = 0x49;
@@ -203,7 +203,7 @@ void cria_func(void *f, DescParam params[], int n, unsigned char codigo[])
                     codigo[indice++] = 0x8b;
                     codigo[indice++] = 0x32;
                 }
-                else
+                else if (i == 2)
                 {
                     // move para r11 e desreferencia em rdx
                     codigo[indice++] = 0x49;
